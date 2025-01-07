@@ -22,6 +22,7 @@ import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +39,7 @@ import dev.icerock.moko.geo.compose.BindLocationTrackerEffect
 import dev.icerock.moko.geo.compose.LocationTrackerAccuracy
 import dev.icerock.moko.geo.compose.rememberLocationTrackerFactory
 import dev.icerock.moko.permissions.PermissionState
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -45,7 +47,6 @@ import ui.AppState
 import ui.WeatherViewModel
 
 import weatherapp.composeapp.generated.resources.Res
-import weatherapp.composeapp.generated.resources.icons8_clouds
 import weatherapp.composeapp.generated.resources.icons8_doorbell
 import weatherapp.composeapp.generated.resources.icons8_hygrometer
 import weatherapp.composeapp.generated.resources.icons8_wind
@@ -58,6 +59,7 @@ fun App() {
         val locationTracker = remember { factory.createLocationTracker() }
         val viewModel = viewModel { WeatherViewModel(locationTracker) }
         val cityToSearch = remember { mutableStateOf("") }
+        val coroutineScope = rememberCoroutineScope()
 
         BindLocationTrackerEffect(locationTracker)
 
@@ -66,7 +68,6 @@ fun App() {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = CenterHorizontally
         ) {
-
             val permissionState = viewModel.permissionState.collectAsState()
             val appState = viewModel.appState.collectAsState()
 
@@ -93,6 +94,7 @@ fun App() {
                         }
                         is AppState.Success -> {
                             val data = (appState.value as AppState.Success).data
+                            val textId = data.weather?.getOrNull(0)?.icon
                            Box(
                                modifier = Modifier.fillMaxSize().background(
                                    brush = Brush.verticalGradient(
@@ -143,6 +145,16 @@ fun App() {
                                        )
                                        IconButton(
                                            onClick = {
+                                               coroutineScope.launch {
+                                                   viewModel.setLoadingState()
+                                                   viewModel.updateLocationData()
+                                               }
+                                           }
+                                       ) {
+                                           Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = Color.White)
+                                       }
+                                       IconButton(
+                                           onClick = {
                                                viewModel.searchByCity(cityToSearch.value)
                                                cityToSearch.value = ""
                                            }
@@ -160,13 +172,14 @@ fun App() {
 
                                    Image(
                                        painter = painterResource(
-                                           getImage(
-                                               data.weather?.getOrNull(0)?.main ?: ""
+                                           viewModel.getImage(
+                                               data.weather?.getOrNull(0)?.icon ?: ""
                                            )
                                        ),
                                        contentDescription = null,
                                        modifier = Modifier.size(120.dp)
                                    )
+                                       Spacer(modifier = Modifier.size(6.dp))
                                    Text(text = data.name ?: "N/A",
                                        style = MaterialTheme.typography.h6.copy(
                                            color = Color.White,
@@ -256,8 +269,4 @@ fun WeatherCard(image: DrawableResource, title: String, value: String) {
         Spacer(modifier = Modifier.size(8.dp))
         Text(text = value, color = Color.White)
     }
-}
-
-private fun getImage(main: String?): DrawableResource {
-    return Res.drawable.icons8_clouds
 }

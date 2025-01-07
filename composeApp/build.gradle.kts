@@ -56,6 +56,10 @@ kotlin {
             implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
             api("dev.icerock.moko:geo:0.6.0")
             api("dev.icerock.moko:geo-compose:0.6.0")
+            implementation("io.coil-kt:coil-compose:2.2.2") {
+                exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-android")
+                exclude(group = "com.squareup.okhttp3", module = "okhttp")
+            }
         }
 
         iosMain.dependencies {

@@ -9,11 +9,27 @@ import dev.icerock.moko.permissions.DeniedAlwaysException
 import dev.icerock.moko.permissions.DeniedException
 import dev.icerock.moko.permissions.Permission
 import dev.icerock.moko.permissions.PermissionState
-import io.ktor.util.valuesOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.DrawableResource
+
+import weatherapp.composeapp.generated.resources.Res
+import weatherapp.composeapp.generated.resources.cloud_fill
+import weatherapp.composeapp.generated.resources.cloud_moon_bolt_fill
+import weatherapp.composeapp.generated.resources.cloud_moon_fill
+import weatherapp.composeapp.generated.resources.cloud_moon_rain_fill
+import weatherapp.composeapp.generated.resources.cloud_sleet_fill
+import weatherapp.composeapp.generated.resources.cloud_snow_fill
+import weatherapp.composeapp.generated.resources.cloud_sun_bolt_fill
+import weatherapp.composeapp.generated.resources.cloud_sun_fill
+import weatherapp.composeapp.generated.resources.cloud_sun_rain_fill
+import weatherapp.composeapp.generated.resources.moon_haze_fill
+import weatherapp.composeapp.generated.resources.moon_stars_fill
+import weatherapp.composeapp.generated.resources.questionmark_circle_dashed
+import weatherapp.composeapp.generated.resources.sun_haze_fill
+import weatherapp.composeapp.generated.resources.sun_max_fill
 
 class WeatherViewModel(
     private val locationTracker: LocationTracker
@@ -50,7 +66,6 @@ class WeatherViewModel(
                 _permissionState.value = PermissionState.Granted
             } catch (e: DeniedException) {
                 _permissionState.value = PermissionState.Denied
-                println("✅✅✅" + e)
             } catch (e: DeniedAlwaysException) {
                 _permissionState.value = PermissionState.DeniedAlways
             } catch (e: Exception) {
@@ -96,6 +111,40 @@ class WeatherViewModel(
             }
         } ?: "N/A"
     }
+
+    fun setLoadingState() {
+        _appState.value = AppState.Loading
+    }
+
+    fun getIconUrl(iconCode: String): String {
+        return "https://openweathermap.org/img/wn/${iconCode}@2x.png"
+    }
+
+    fun getImage(weatherCode: String?): DrawableResource {
+        return when (weatherCode) {
+            "01d" -> Res.drawable.sun_max_fill
+            "01n" -> Res.drawable.moon_stars_fill
+            "02d" -> Res.drawable.cloud_sun_fill
+            "02n" -> Res.drawable.cloud_moon_fill
+            "03d", "03n", "04d", "04n" -> Res.drawable.cloud_fill
+
+            "09d", "09n" -> Res.drawable.cloud_sleet_fill
+
+            "10d" -> Res.drawable.cloud_sun_rain_fill
+            "10n" -> Res.drawable.cloud_moon_rain_fill
+
+            "11d" -> Res.drawable.cloud_sun_bolt_fill
+            "11n" -> Res.drawable.cloud_moon_bolt_fill
+
+            "13d", "13n" -> Res.drawable.cloud_snow_fill
+
+            "50d" -> Res.drawable.sun_haze_fill
+            "50n" -> Res.drawable.moon_haze_fill
+
+            else -> Res.drawable.questionmark_circle_dashed
+        }
+    }
+
 
     suspend fun updateLocationData() {
         locationTracker.startTracking()
