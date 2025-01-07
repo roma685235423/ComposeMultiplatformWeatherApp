@@ -11,12 +11,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
+import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
@@ -51,6 +57,8 @@ fun App() {
         val factory = rememberLocationTrackerFactory(LocationTrackerAccuracy.Best)
         val locationTracker = remember { factory.createLocationTracker() }
         val viewModel = viewModel { WeatherViewModel(locationTracker) }
+        val cityToSearch = remember { mutableStateOf("") }
+
         BindLocationTrackerEffect(locationTracker)
 
         Column(
@@ -93,36 +101,80 @@ fun App() {
                                            Color(0xff4A90E2)
                                        )
                                    )
-                               )
+                               ).systemBarsPadding()
                            )
                            {
-                               Row(
-                                   horizontalArrangement = Arrangement.SpaceBetween,
-                                   modifier = Modifier.fillMaxWidth().align(Alignment.TopStart).padding(16.dp)
+                               Spacer(modifier = Modifier.size(16.dp))
+                               Column(
+                                   modifier = Modifier
+                                       .fillMaxWidth()
+                                       .padding(16.dp)
                                ) {
-                                   Text(text = data.name, color = Color.White)
-                                   Icon(
-                                       painter = painterResource(Res.drawable.icons8_doorbell),
-                                       contentDescription = null,
-                                       tint = Color.White,
-                                       modifier = Modifier.size(24.dp)
-                                   )
-                               }
-                               Column(modifier = Modifier.fillMaxSize().align(Alignment.Center),
-                                   verticalArrangement = Arrangement.Center,
-                                   horizontalAlignment = CenterHorizontally
+                                   Row(
+                                       horizontalArrangement = Arrangement.SpaceBetween,
+                                       modifier = Modifier
+                                           .fillMaxWidth()
                                    ) {
+                                       Text(text = data.name ?: "N/A", color = Color.White)
+                                       Icon(
+                                           painter = painterResource(Res.drawable.icons8_doorbell),
+                                           contentDescription = null,
+                                           tint = Color.White,
+                                           modifier = Modifier.size(24.dp)
+                                       )
+                                   }
                                    Spacer(modifier = Modifier.size(16.dp))
+                                   Row(
+                                       horizontalArrangement = Arrangement.SpaceBetween,
+                                       modifier = Modifier.fillMaxWidth()
+                                   ) {
+                                       OutlinedTextField(
+                                           value = cityToSearch.value,
+                                           onValueChange = {
+                                               cityToSearch.value = it
+                                           },
+                                           colors = TextFieldDefaults.textFieldColors(
+                                               backgroundColor = Color.White.copy(alpha = .1f),
+                                               cursorColor = Color.White,
+                                               textColor = Color.White,
+                                               focusedIndicatorColor = Color.White,
+                                               unfocusedIndicatorColor = Color.Transparent
+                                           )
+                                       )
+                                       IconButton(
+                                           onClick = {
+                                               viewModel.searchByCity(cityToSearch.value)
+                                               cityToSearch.value = ""
+                                           }
+                                       ) {
+                                           Icon(Icons.Rounded.Search, contentDescription = null, tint = Color.White)
+                                       }
+                                   }
+
+                                   Column(
+                                       modifier = Modifier.fillMaxWidth(),
+                                       horizontalAlignment = CenterHorizontally
+                                   ) {
+
+                                   Spacer(modifier = Modifier.size(16.dp))
+
                                    Image(
                                        painter = painterResource(
                                            getImage(
-                                               data.weather.getOrNull(0)?.main ?: ""
+                                               data.weather?.getOrNull(0)?.main ?: ""
                                            )
                                        ),
                                        contentDescription = null,
                                        modifier = Modifier.size(120.dp)
                                    )
-                                   Spacer(modifier = Modifier.size(32.dp))
+                                   Text(text = data.name ?: "N/A",
+                                       style = MaterialTheme.typography.h6.copy(
+                                           color = Color.White,
+                                           fontWeight = FontWeight.Bold
+                                       )
+                                   )
+
+                                       Spacer(modifier = Modifier.size(16.dp))
 
                                    Column(
                                        horizontalAlignment = CenterHorizontally,
@@ -134,16 +186,20 @@ fun App() {
                                            .background(color = Color.White.copy(alpha = .1f))
                                            .padding(16.dp)
                                    ) {
-                                        Text(text = data.main.temp.toInt().toString(),
-                                            style = MaterialTheme.typography.h2.copy(
-                                                color = Color.White,
-                                                fontWeight = FontWeight.ExtraBold
-                                            ),
-                                            fontSize = 80.sp)
+                                       val tempText = data.main?.temp?.toInt()?.toString() ?: "N/A"
+                                       Text(
+                                           text = viewModel.kelvinToCelsiusString(data.main?.temp),
+                                           style = MaterialTheme.typography.h2.copy(
+                                               color = Color.White,
+                                               fontWeight = FontWeight.ExtraBold
+                                           ),
+                                           fontSize = 54.sp
+                                       )
 
                                        Spacer(modifier = Modifier.size(16.dp))
 
-                                       Text(text = data.weather.getOrNull(0)?.description?:"",
+                                       Text(
+                                           text = data.weather?.getOrNull(0)?.description ?: "",
                                            style = MaterialTheme.typography.h6.copy(
                                                color = Color.White,
                                                fontWeight = FontWeight.Bold
@@ -161,6 +217,7 @@ fun App() {
                                            title = "Humiduty",
                                            value = "${data.main?.humidity} %"
                                        )
+                                   }
                                    }
                                }
                            }
